@@ -43,7 +43,7 @@ Frame is finished, when countdown reaches 0.
 
 Parameters of voices: 
 
-- main register **b** (voice 1 waveform pointer's high byte)
+- main register **b**: voice 1 waveform pointer's high byte
 
 and next 16-bit variables:
 
