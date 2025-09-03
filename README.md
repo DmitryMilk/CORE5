@@ -21,7 +21,7 @@ There are no more parameters of voice (volume or somethin other).
 Volume, timbre and timbral modulations must be implemented in the waveform itself.
 For example, silence of voice - must be just waveform of 256 zero samples.
 
-Entrypoint of frame: 'iloop'.
+Entrypoint of frame: **iloop**.
 
 State of tonal voices is stored in register pairs:
 
