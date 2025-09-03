@@ -1,0 +1,117 @@
+
+main b:		voice 1 waveform (high byte)
+main c:		samples counter inside frame
+main de:	voice1 phase (fixed 8.8)
+ix:		voice2 phase (fixed 8.8)
+iy:		voice3 phase (fixed 8.8)
+shadow bc:	voice4 phase (fixed 8.8)
+shadow de:	voice5 phase (fixed 8.8)
+
+main and shadow hl: 16-bit ALU, temporary
+
+Main cycle (from iloop to the end), length = 416 tacts, two pulses:
+
+	main a:		voices accumulator (last half of code)
+	shadow a:	high pulse level 0FFh
+	shadow flags:	flag z = 0 (for balance ret z;= 5)
+
+
+=======================================================================
+iloop:
+	ld      l, a		;= 4
+tbl_ptr	equ $ + 1
+	ld      h, plstbl/512	;= 7
+	add     hl, hl		;= 11
+	ld      sp, hl		;= 6
+	sub     a		;= 4
+	out     (0FEh), a	;= 11
+	ret			;= 10,  jump to specific plsvariantN
+=======================================================================
+	
+end of pulse 1 (floating position):
+	cpl			;= 4,  ( may be replaced by 'ld a, 0FFh;= 7' to achieve balance 3)
+	out     (0FE)h, a	;= 11
+	ex      af, af'		;= 4
+
+=======================================================================
+	
+start of pulse 2 (fixed position)
+	sub     a		;= 4,  ( may be replaced by 'ld a, 0;= 7' to achieve balance 3)
+	out     (0FE)h, a	;= 11
+
+=======================================================================
+	
+end of pulse 2 (floating position)
+	ex      af, af'		;= 4
+	out     (0FE)h, a	;= 11
+	ex      af, af'		;= 4
+
+=======================================================================
+plsvariantN:	
+	ld      sp, vars	;= 10
+	
+	pop     hl		;= 10, freq1
+	add     hl, de		;= 11
+	pop     de		;= 10, freq2
+	add     ix, de		;= 15
+	pop     de		;= 10, freq3
+	add     iy, de		;= 15
+	ex      de, hl		;= 4
+	
+	exx			;= 4
+	
+	pop     hl		;= 10, freq4
+	add     hl, bc		;= 11
+	ld      b, h		;= 4
+	ld      c, l		;= 4
+	
+	pop     hl		;= 10, freq5
+	add     hl, de		;= 11
+								; start of pulse 2
+	pop     de		;= 10, wave2
+	ld      e, ixh		;= 8
+	ld      a, (de)		;= 7
+	pop     de		;= 10, wave3
+	ld      e, iyh		;= 8
+	ex      de, hl		;= 4
+
+	add     (hl)		;= 7
+	
+	pop     hl		;= 10, wave4
+	ld      l, b		;= 4
+	add     (hl)		;= 7
+	
+	pop     hl		;= 10, wave5
+	ld      l, d		;= 4
+	add     (hl)		;= 7
+	
+	exx			;= 4
+	
+	ld      h, b		;= 4, wave1
+	ld      l, d		;= 4
+	add     (hl)		;= 7
+	
+	dec     c		;= 4
+	jp nz,	iloop		;= 10
+;=======================================================
+
+	ret			;= 10, jump to interframe code, pointed by frmexit
+
+
+main cycle prolog (including pulse1 start):
+4+7+11+6+4+11 + 10
+
+end of pulse 1 (floating position):
+4+11 + 4
+
+start of pulse 2 (fixed position)
+4+11
+
+end of pulse 2 (floating position)
+4+11 + 4
+
+
+10+10+11+10+15+10+15+4+4+10+11+4+4+10+11 + 10+8+7+10+8+4+7+10+4+7+10+4+7+4+4+4+7+4 + 10
+
+10+(4)+4+11 	+4+(10+10+11+10+15+10+15+4+4+10+11 + 21)+4+4+10+11 + 4+11
+10+(4)+4+11 	+4+(8+7+10+8+4+7+10+4+7+10+4+7+4+4+4+7+4 + 13) + 10 + 4+7+11+6+4+11
